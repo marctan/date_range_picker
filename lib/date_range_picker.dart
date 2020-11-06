@@ -986,8 +986,8 @@ class _YearPickerState extends State<YearPicker> {
   }
 }
 
-class _DatePickerDialog extends StatefulWidget {
-  const _DatePickerDialog({
+class DatePickerDialog extends StatefulWidget {
+  const DatePickerDialog({
     Key key,
     this.initialFirstDate,
     this.initialLastDate,
@@ -995,6 +995,8 @@ class _DatePickerDialog extends StatefulWidget {
     this.lastDate,
     this.selectableDayPredicate,
     this.initialDatePickerMode,
+    this.onOk,
+    this.onCancel,
   }) : super(key: key);
 
   final DateTime initialFirstDate;
@@ -1003,12 +1005,14 @@ class _DatePickerDialog extends StatefulWidget {
   final DateTime lastDate;
   final SelectableDayPredicate selectableDayPredicate;
   final DatePickerMode initialDatePickerMode;
+  final ValueChanged<List<DateTime>> onOk;
+  final Function onCancel;
 
   @override
   _DatePickerDialogState createState() => new _DatePickerDialogState();
 }
 
-class _DatePickerDialogState extends State<_DatePickerDialog> {
+class _DatePickerDialogState extends State<DatePickerDialog> {
   @override
   void initState() {
     super.initState();
@@ -1100,7 +1104,7 @@ class _DatePickerDialogState extends State<_DatePickerDialog> {
   }
 
   void _handleCancel() {
-    Navigator.pop(context);
+    widget.onCancel?.call();
   }
 
   void _handleOk() {
@@ -1111,7 +1115,7 @@ class _DatePickerDialogState extends State<_DatePickerDialog> {
         result.add(_selectedLastDate);
       }
     }
-    Navigator.pop(context, result);
+    widget.onOk?.call(result);
   }
 
   Widget _buildPicker() {
@@ -1291,13 +1295,19 @@ Future<List<DateTime>> showDatePicker({
   assert(
       initialDatePickerMode != null, 'initialDatePickerMode must not be null');
 
-  Widget child = new _DatePickerDialog(
+  Widget child = new DatePickerDialog(
     initialFirstDate: initialFirstDate,
     initialLastDate: initialLastDate,
     firstDate: firstDate,
     lastDate: lastDate,
     selectableDayPredicate: selectableDayPredicate,
     initialDatePickerMode: initialDatePickerMode,
+    onCancel: () {
+      Navigator.of(context).pop();
+    },
+    onOk: (dates) {
+      Navigator.of(context).pop(dates);
+    },
   );
 
   if (textDirection != null) {
