@@ -995,11 +995,10 @@ class DatePickerDialog extends StatefulWidget {
     this.lastDate,
     this.selectableDayPredicate,
     this.initialDatePickerMode,
-    this.onOk,
-    this.onCancel,
     this.showHeader = true,
-    this.cancelButtonLabel,
-    this.okLabel,
+    this.actions,
+    this.onChanged,
+    this.elevation = 3.0,
   }) : super(key: key);
 
   final DateTime initialFirstDate;
@@ -1008,11 +1007,10 @@ class DatePickerDialog extends StatefulWidget {
   final DateTime lastDate;
   final SelectableDayPredicate selectableDayPredicate;
   final DatePickerMode initialDatePickerMode;
-  final ValueChanged<List<DateTime>> onOk;
-  final Function onCancel;
+  final ValueChanged<List<DateTime>> onChanged;
   final bool showHeader;
-  final String cancelButtonLabel;
-  final String okLabel;
+  final Widget actions;
+  final double elevation;
   @override
   _DatePickerDialogState createState() => new _DatePickerDialogState();
 }
@@ -1097,6 +1095,7 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
       _selectedFirstDate = changes[0];
       _selectedLastDate = changes[1];
     });
+    widget.onChanged(_onChanged());
   }
 
   void _handleDayChanged(List<DateTime> changes) {
@@ -1106,13 +1105,18 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
       _selectedFirstDate = changes[0];
       _selectedLastDate = changes[1];
     });
+    widget.onChanged(_onChanged());
   }
 
   void _handleCancel() {
-    widget.onCancel?.call();
+    Navigator.of(context).pop();
   }
 
   void _handleOk() {
+    Navigator.of(context).pop(_onChanged());
+  }
+
+  List<DateTime> _onChanged() {
     List<DateTime> result = [];
     if (_selectedFirstDate != null) {
       result.add(_selectedFirstDate);
@@ -1120,7 +1124,7 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
         result.add(_selectedLastDate);
       }
     }
-    widget.onOk?.call(result);
+    return result;
   }
 
   Widget _buildPicker() {
@@ -1158,78 +1162,83 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
         child: _buildPicker(),
       ),
     );
-    final Widget actions = new ButtonTheme.bar(
-      child: new ButtonBar(
-        children: <Widget>[
-          new FlatButton(
-            child: new Text(widget.cancelButtonLabel),
-            onPressed: _handleCancel,
+    final Widget actions = widget.actions ??
+        new ButtonTheme.bar(
+          child: new ButtonBar(
+            children: <Widget>[
+              new FlatButton(
+                child: new Text(localizations.cancelButtonLabel),
+                onPressed: _handleCancel,
+              ),
+              new FlatButton(
+                child: new Text(localizations.okButtonLabel),
+                onPressed: _handleOk,
+              ),
+            ],
           ),
-          new FlatButton(
-            child: new Text(widget.okLabel),
-            onPressed: _handleOk,
-          ),
-        ],
-      ),
-    );
-    final Dialog dialog = new Dialog(child: new OrientationBuilder(
+        );
+    final Dialog dialog = new Dialog(
+      child: new OrientationBuilder(
         builder: (BuildContext context, Orientation orientation) {
-      assert(orientation != null);
-      final Widget header = new _DatePickerHeader(
-        selectedFirstDate: _selectedFirstDate,
-        selectedLastDate: _selectedLastDate,
-        mode: _mode,
-        onModeChanged: _handleModeChanged,
-        orientation: orientation,
-      );
-      switch (orientation) {
-        case Orientation.portrait:
-          return new SizedBox(
-            width: _kMonthPickerPortraitWidth,
-            child: new Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                if (widget.showHeader) header,
-                new Container(
-                  color: theme.dialogBackgroundColor,
-                  child: new Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
-                      picker,
-                      actions,
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          assert(orientation != null);
+          final Widget header = new _DatePickerHeader(
+            selectedFirstDate: _selectedFirstDate,
+            selectedLastDate: _selectedLastDate,
+            mode: _mode,
+            onModeChanged: _handleModeChanged,
+            orientation: orientation,
           );
-        case Orientation.landscape:
-          return new SizedBox(
-            height: _kDatePickerLandscapeHeight,
-            child: new Row(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                header,
-                new Flexible(
-                  child: new Container(
-                    width: _kMonthPickerLandscapeWidth,
-                    color: theme.dialogBackgroundColor,
-                    child: new Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[picker, actions],
+          switch (orientation) {
+            case Orientation.portrait:
+              return new SizedBox(
+                width: _kMonthPickerPortraitWidth,
+                child: new Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    if (widget.showHeader) header,
+                    new Container(
+                      color: theme.dialogBackgroundColor,
+                      child: new Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          picker,
+                          actions,
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
-          );
-      }
-      return null;
-    }));
+              );
+            case Orientation.landscape:
+              return new SizedBox(
+                height: _kDatePickerLandscapeHeight,
+                child: new Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    header,
+                    new Flexible(
+                      child: new Container(
+                        width: _kMonthPickerLandscapeWidth,
+                        color: theme.dialogBackgroundColor,
+                        child: new Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: <Widget>[picker, actions],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+          }
+          return null;
+        },
+      ),
+      elevation: widget.elevation,
+    );
 
     return new Theme(
       data: theme.copyWith(
@@ -1299,7 +1308,6 @@ Future<List<DateTime>> showDatePicker({
       'Provided initialDate must satisfy provided selectableDayPredicate');
   assert(
       initialDatePickerMode != null, 'initialDatePickerMode must not be null');
-  MaterialLocalizations localizations = MaterialLocalizations.of(context);
 
   Widget child = new DatePickerDialog(
     initialFirstDate: initialFirstDate,
@@ -1308,14 +1316,6 @@ Future<List<DateTime>> showDatePicker({
     lastDate: lastDate,
     selectableDayPredicate: selectableDayPredicate,
     initialDatePickerMode: initialDatePickerMode,
-    okLabel: localizations.okButtonLabel,
-    cancelButtonLabel: localizations.cancelButtonLabel,
-    onCancel: () {
-      Navigator.of(context).pop();
-    },
-    onOk: (dates) {
-      Navigator.of(context).pop(dates);
-    },
   );
 
   if (textDirection != null) {
