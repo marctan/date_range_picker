@@ -997,6 +997,9 @@ class DatePickerDialog extends StatefulWidget {
     this.initialDatePickerMode,
     this.onOk,
     this.onCancel,
+    this.showHeader = true,
+    this.cancelButtonLabel,
+    this.okLabel,
   }) : super(key: key);
 
   final DateTime initialFirstDate;
@@ -1007,7 +1010,9 @@ class DatePickerDialog extends StatefulWidget {
   final DatePickerMode initialDatePickerMode;
   final ValueChanged<List<DateTime>> onOk;
   final Function onCancel;
-
+  final bool showHeader;
+  final String cancelButtonLabel;
+  final String okLabel;
   @override
   _DatePickerDialogState createState() => new _DatePickerDialogState();
 }
@@ -1157,11 +1162,11 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
       child: new ButtonBar(
         children: <Widget>[
           new FlatButton(
-            child: new Text(localizations.cancelButtonLabel),
+            child: new Text(widget.cancelButtonLabel),
             onPressed: _handleCancel,
           ),
           new FlatButton(
-            child: new Text(localizations.okButtonLabel),
+            child: new Text(widget.okLabel),
             onPressed: _handleOk,
           ),
         ],
@@ -1185,7 +1190,7 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                header,
+                if (widget.showHeader) header,
                 new Container(
                   color: theme.dialogBackgroundColor,
                   child: new Column(
@@ -1294,6 +1299,7 @@ Future<List<DateTime>> showDatePicker({
       'Provided initialDate must satisfy provided selectableDayPredicate');
   assert(
       initialDatePickerMode != null, 'initialDatePickerMode must not be null');
+  MaterialLocalizations localizations = MaterialLocalizations.of(context);
 
   Widget child = new DatePickerDialog(
     initialFirstDate: initialFirstDate,
@@ -1302,6 +1308,8 @@ Future<List<DateTime>> showDatePicker({
     lastDate: lastDate,
     selectableDayPredicate: selectableDayPredicate,
     initialDatePickerMode: initialDatePickerMode,
+    okLabel: localizations.okButtonLabel,
+    cancelButtonLabel: localizations.cancelButtonLabel,
     onCancel: () {
       Navigator.of(context).pop();
     },
